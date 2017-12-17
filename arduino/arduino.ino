@@ -1,6 +1,10 @@
 /*
  * Датчик температуры/влажность/освещенности
  * За основу взят: https://www.mysensors.org/build/humidity
+ * 
+ * фоторезистор с 10к резистором (делитель напряжения) - A0 пин
+ * DHT11 - к 3 пину
+ * 
  */
 
 //#define MY_DEBUG
@@ -12,6 +16,7 @@
 #define DHTPIN 3        // куда подключен DHT
 #define DHTTYPE DHT11   // DHT 11
 #define SENSOR_TEMP_OFFSET 0
+#define LIGHT_PIN A0
 
 const float my_vcc_const = 1.097;    // константа вольтметра (для правильного определения напряжения питания)
 int oldBatteryPcnt = 0;
@@ -71,7 +76,7 @@ void loop(){
     oldBatteryPcnt = batteryPcnt;
   }
   
-  long lightlevel = map(analogRead(A0),0, 1024, 0, 100);
+  long lightlevel = map(analogRead(LIGHT_PIN),0, 1024, 0, 100);
   #ifdef MY_DEBUG
     Serial.print("PhotoSensor: ");
     Serial.print(lightlevel);
