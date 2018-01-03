@@ -7,7 +7,7 @@
  * 
  */
 
-//#define MY_DEBUG
+#define MY_DEBUG
 #define MY_RADIO_NRF24 
 #include <SPI.h>
 #include <MySensors.h>  
@@ -27,6 +27,10 @@ static const uint8_t FORCE_UPDATE_N_READS = 10;
 #define CHILD_ID_TEMP 1
 #define CHILD_ID_LIGHT 2
 
+const int tempDiff = 2;
+const int lightDiff = 3;
+const int hummDiff = 2;
+
 float lastTemp;
 float lastHum;
 uint8_t nNoUpdatesTemp;
@@ -40,12 +44,11 @@ MyMessage msgLight(CHILD_ID_LIGHT, V_LIGHT_LEVEL);
 DHT dht(DHTPIN, DHTTYPE);
 
 void presentation(){ 
-  sendSketchInfo("TemperatureAndHumidity", "1.1");
+  sendSketchInfo("TemperatureAndHumidity", "1.2");
   present(CHILD_ID_HUM, S_HUM);
   present(CHILD_ID_TEMP, S_TEMP);  
   present(CHILD_ID_LIGHT, S_LIGHT_LEVEL);
 }
-
 
 void setup(){
   dht.begin();
@@ -82,7 +85,7 @@ void loop(){
     Serial.print(lightlevel);
     Serial.println("%");
   #endif
-  if (oldLight!=lightlevel){
+  if (isDiff(oldLight,lightlevel,lightDiff)){
     oldLight=lightlevel;
     send(msgLight.set(lightlevel, 1));
   }
@@ -90,7 +93,7 @@ void loop(){
   float temperature = dht.readTemperature();
   if (isnan(temperature)) {
     Serial.println("Failed reading temperature from DHT!");
-  } else if (temperature != lastTemp || nNoUpdatesTemp == FORCE_UPDATE_N_READS) {
+  } else if (isDiff(temperature,lastTemp, tempDiff) || nNoUpdatesTemp == FORCE_UPDATE_N_READS) {
     // Only send temperature if it changed since the last measurement or if we didn't send an update for n times
     lastTemp = temperature;
     // Reset no updates counter
@@ -111,7 +114,7 @@ void loop(){
   float humidity = dht.readHumidity();
   if (isnan(humidity)) {
     Serial.println("Failed reading humidity from DHT");
-  } else if (humidity != lastHum || nNoUpdatesHum == FORCE_UPDATE_N_READS) {
+  } else if (isDiff(humidity,lastHum,hummDiff) || nNoUpdatesHum == FORCE_UPDATE_N_READS) {
     // Only send humidity if it changed since the last measurement or if we didn't send an update for n times
     lastHum = humidity;
     // Reset no updates counter
@@ -129,6 +132,10 @@ void loop(){
 
   // Sleep for a while to save energy
   sleep(UPDATE_INTERVAL); 
+}
+
+boolean isDiff(float a, float b, int md){
+  return abs(a-b)>md;
 }
 
 long readVcc() { //функция чтения внутреннего опорного напряжения, универсальная (для всех ардуин)
